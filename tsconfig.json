@@ -1,0 +1,7 @@
+{
+  "module": "es2022",
+  "target": "es2022",
+  "compilerOptions": {
+    "target": "es2022"
+  }
+}
