@@ -23,6 +23,7 @@ board is clear.
 septets9: file contains members - string of 7 tiles, sum of tiles, delta value that indicates if
 the member can be placed on the board.
 
+```
 direct-7
 ACABALO
 ===================
@@ -65,6 +66,7 @@ ACOLABA
 ALOCABA
 BACALAO
 ===================
+```
 
 interval: collection of, more than one, consecutive unoccupied squares on the board that are not
 next to (have distance greater than 1) an occupied square. either row or column
