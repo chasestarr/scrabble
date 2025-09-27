@@ -1,18 +1,12 @@
-class Edge {
+type Edge = {
   from: Node;
   to: Node;
   char: string;
-
-  constructor(from: Node, to: Node, char: string) {
-    this.from = from;
-    this.to = to;
-    this.char = char;
-  }
-}
+};
 
 class Node {
   id: number;
-  edges: Map<string, Edge> = new Map();
+  edges: Map<string, Node> = new Map();
   terminal: boolean = false;
 
   static nextId = 1;
@@ -25,29 +19,38 @@ class Node {
   key(): string {
     const keys = [];
     keys.push(+this.terminal);
-    for (const [char, edge] of this.edges) {
+    for (const [char, node] of this.edges) {
       keys.push(char);
-      keys.push(edge.to.id);
+      keys.push(node.id);
     }
-    return keys.join('');
+    return keys.join("");
   }
 
   addEdge(char: string, node: Node) {
-    this.edges.set(char, new Edge(this, node, char));
+    this.edges.set(char.toUpperCase(), node);
+  }
+
+  getEdge(char: string): Node | null {
+    const node = this.edges.get(char);
+    if (node !== undefined) {
+      return node;
+    }
+    return null;
   }
 }
 
-class Dawg {
+export class Dawg {
   count: number = 0;
-  previous: string = '';
+  previous: string = "";
   minimizedNodes: Map<string, Node> = new Map();
   uncheckedEdges: Edge[] = [];
   root: Node = new Node();
 
   minimize(edge: Edge) {
     const key = edge.to.key();
-    if (this.minimizedNodes.has(key)) {
-      edge.from.addEdge(edge.char, this.minimizedNodes.get(key));
+    const nodes = this.minimizedNodes.get(key);
+    if (nodes) {
+      edge.from.addEdge(edge.char, nodes);
     } else {
       this.minimizedNodes.set(key, edge.to);
     }
@@ -75,7 +78,7 @@ class Dawg {
       const next = new Node();
       const char = word[index];
       node.addEdge(char, next);
-      this.uncheckedEdges.push(new Edge(node, next, char));
+      this.uncheckedEdges.push({ from: node, to: next, char });
       node = next;
       index += 1;
     }
@@ -85,55 +88,44 @@ class Dawg {
     this.count += 1;
   }
 
-  includesWord(word: string): boolean {
-    const stack = [];
-    stack.push({node : this.root, path : []});
+  getPrefixNode(prefix: string): Node | null {
+    const stack: Array<{ node: Node; path: Node[] }> = [];
+    stack.push({ node: this.root, path: [] });
 
     while (stack.length) {
       const current = stack.pop();
-      const currentChar = word[current.path.length];
-      const isLastCharInWord = current.path.length === word.length - 1;
+      if (!current) {
+        continue;
+      }
 
-      // // path is longer than word
-      // if (currentChar === undefined) {
-      //   return false;
-      // }
+      const currentChar = prefix[current.path.length];
+      const isLastChar = current.path.length === prefix.length;
 
-      if (current.node.edges.has(currentChar.toUpperCase())) {
-        const edge = current.node.edges.get(currentChar.toUpperCase());
-        if (isLastCharInWord) {
-          return edge.to.terminal;
-        }
+      if (isLastChar) {
+        return current.node;
+      }
 
-        stack.push({node: edge.to, path: [...current.path, current.node ]});
+      const node = current.node.getEdge(currentChar.toUpperCase());
+      if (node !== null) {
+        stack.push({ node, path: [...current.path, current.node] });
       }
     }
+    return null;
+  }
 
+  includesWord(word: string): boolean {
+    const node = this.getPrefixNode(word);
+    if (node !== null) {
+      return node.terminal;
+    }
     return false;
   }
 
-  // includesPrefix(prefix: string): boolean {}
-
-  wordCount(): number { return this.count; }
-}
-
-import {createReadStream, readFileSync} from 'node:fs';
-async function main() {
-  const dawg = new Dawg();
-
-  const file = readFileSync('./src/word-list.txt', 'utf8');
-  const words = file.split('\n');
-
-  const start = performance.now();
-  for (const word of words) {
-    dawg.pushWord(word);
+  includesPrefix(prefix: string): boolean {
+    return this.getPrefixNode(prefix) !== null;
   }
-  console.log(performance.now() - start);
 
-
-  console.log(dawg.includesWord('dog'));
-  console.log(dawg.includesWord('xyz'));
-  console.log(dawg.includesWord('zymologies'));
+  wordCount(): number {
+    return this.count;
+  }
 }
-
-main().catch(console.error);

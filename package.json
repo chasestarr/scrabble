@@ -1,7 +1,8 @@
 {
   "type": "module",
   "devDependencies": {
-    "@types/node": "^18.11.18",
-    "typescript": "^4.9.4"
+    "@types/bun": "^1.0.12",
+    "@types/node": "^20.12.7",
+    "tsm": "2.3.0"
   }
 }
